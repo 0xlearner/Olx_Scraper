@@ -1,13 +1,17 @@
 import scrapy
 import requests
+import json
+from olx_egypt.items import OlxEgyptItem
 
 
 class OlxScraper(scrapy.Spider):
     name = "olx-eg-scraper"
 
     custom_settings = {
+        "FEED_FORMAT": "csv",
+        "FEED_URI": "olx-eg.csv",
         "LOG_FILE": "olx_eg.log",
-        "ITEM_PIPELINES": {"olx_egypt.pipelines.OlxEgPipeline": 300},
+        # "ITEM_PIPELINES": {"olx_egypt.pipelines.OlxEgPipeline": 300},
     }
 
     listing_endpoint = "https://search.olx.com.eg/_msearch?filter_path=took%2C*.took%2C*.suggest.*.options.text%2C*.suggest.*.options._source.*%2C*.hits.total.*%2C*.hits.hits._source.*%2C*.hits.hits.highlight.*%2C*.error%2C*.aggregations.*.buckets.key%2C*.aggregations.*.buckets.doc_count%2C*.aggregations.*.buckets.complex_value.hits.hits._source%2C*.aggregations.*.filtered_agg.facet.buckets.key%2C*.aggregations.*.filtered_agg.facet.buckets.doc_count%2C*.aggregations.*.filtered_agg.facet.buckets.complex_value.hits.hits._source"
@@ -403,34 +407,88 @@ class OlxScraper(scrapy.Spider):
     ]
 
     post_data = [
-        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":581}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":45,"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"timestamp":{{"order":"desc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
-        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":234}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":45,"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"_score":{{"order":"desc"}}}}]}}\n',
-        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":936}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":45,"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"extraFields.price":{{"order":"asc"}}}},{{"extraFields.salary_to":{{"order":"asc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
-        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":99}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":45,"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"extraFields.price":{{"order":"desc"}}}},{{"extraFields.salary_to":{{"order":"desc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
+        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":581}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":{size},"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"timestamp":{{"order":"desc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
+        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":234}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":{size},"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"_score":{{"order":"desc"}}}}]}}\n',
+        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":936}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":{size},"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"extraFields.price":{{"order":"asc"}}}},{{"extraFields.salary_to":{{"order":"asc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
+        '{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":0,"track_total_hits":false,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"category.lvl1.externalID":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.lvl0.externalID":"138"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"category.lvl1.externalID","size":20}}}}}}}}}}}},"location.lvl2":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl1.externalID":"{city}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl2.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl2"]}}}}}}}}}}}}}}}}}},"location.lvl3":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.lvl2.externalID":"{_id}"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"location.lvl3.externalID","size":40}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["location.lvl3"]}}}}}}}}}}}}}}}}}},"product":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["product"]}}}}}}}}}}}}}}}}}},"totalProductCount":{{"global":{{}},"aggs":{{"filtered_agg":{{"filter":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}}]}}}},"aggs":{{"facet":{{"terms":{{"field":"product","size":20}},"aggs":{{"complex_value":{{"top_hits":{{"size":1,"_source":{{"include":["totalProductCount"]}}}}}}}}}}}}}}}}}}}}}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":0,"size":45,"track_total_hits":200000,"query":{{"function_score":{{"random_score":{{"seed":99}},"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"product":"featured"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}}}}}},"sort":["_score"]}}\n{{"index":"olx-eg-production-ads-ar"}}\n{{"from":{page},"size":{size},"track_total_hits":200000,"query":{{"bool":{{"must":[{{"term":{{"category.slug":"properties"}}}},{{"term":{{"location.externalID":"{_id}"}}}}]}}}},"sort":[{{"extraFields.price":{{"order":"desc"}}}},{{"extraFields.salary_to":{{"order":"desc"}}}},{{"id":{{"order":"desc"}}}}]}}\n',
     ]
 
     def start_requests(self):
+        page = 0
+        size = 45
         for data in self.post_data:
             for city in self.cities:
                 for _id in self.city_ids:
-                    for i in range(0, 9911):
-                        page = i + 45
+                    meta = dict(data=data, main_city=city, sub_city=_id)
+
+                    yield scrapy.Request(
+                        url=self.listing_endpoint,
+                        method="POST",
+                        headers=self.headers,
+                        body=data.format(city=city, _id=_id, page=page, size=size),
+                        callback=self.parse_links,
+                        meta=meta,
+                    )
+
+    def parse_links(self, response):
+        size = 45
+        meta = {
+            "data": response.meta["data"],
+            "main_city": response.meta["main_city"],
+            "sub_city": response.meta["sub_city"],
+        }
+        listing_data = {}
+        total = response.json()["responses"][2]["hits"]["total"]["value"]
+        if total > 9955:
+            for i in range(0, 9955):
+                page = i + 1
+                yield scrapy.Request(
+                    url=self.listing_endpoint,
+                    method="POST",
+                    headers=self.headers,
+                    body=meta["data"].format(
+                        city=meta["main_city"],
+                        _id=meta["sub_city"],
+                        page=page,
+                        size=size,
+                    ),
+                    callback=self.parse_links,
+                    meta=meta,
+                )
+        if total < 9955:
+            for i in range(0, total + 1):
+                page = i + 1
+                try:
+                    if (
+                        len(response.json()["responses"][1]["hits"]["hits"]) > 0
+                        or len(response.json()["responses"][2]["hits"]["hits"]) > 0
+                    ):
                         yield scrapy.Request(
                             url=self.listing_endpoint,
                             method="POST",
                             headers=self.headers,
-                            body=data.format(city=city, _id=_id, page=page),
+                            body=meta["data"].format(
+                                city=meta["main_city"],
+                                _id=meta["sub_city"],
+                                page=page,
+                                size=size,
+                            ),
                             callback=self.parse_links,
+                            meta=meta,
                         )
+                except:
+                    pass
 
-    def parse_links(self, response):
-        if "hits" in response.json()["responses"][1]["hits"]:
-            try:
-                listing_data = response.json()["responses"][2]["hits"]["hits"]
-            except:
-                listing_data = response.json()["responses"][1]["hits"]["hits"]
-
-            for listing in listing_data:
+        try:
+            listing_data["data"] = response.json()["responses"][1]["hits"]["hits"]
+        except:
+            pass
+        try:
+            listing_data["data"] = response.json()["responses"][2]["hits"]["hits"]
+        except:
+            pass
+        try:
+            for listing in listing_data["data"]:
                 listing_id = listing["_source"]["externalID"]
                 listing_url = "https://www.olx.com.eg/en/ad/" + listing_id
 
@@ -438,12 +496,29 @@ class OlxScraper(scrapy.Spider):
                     url=listing_url,
                     headers=self.headers,
                     callback=self.parse_details,
-                    meta={"listing_url": listing_url},
+                    meta={
+                        "listing_url": listing_url,
+                    },
                 )
+        except:
+            pass
 
     def parse_details(self, response):
         item = {}
-        reference_id = response.css("div._171225da::text").get().replace("Ad id ", "")
+        data = "".join(
+            response.css("script::text")[6]
+            .get()
+            .replace("<script>", "")
+            .replace("window.state = ", "")
+            .split(";")[:-7]
+        )
+        json_data = json.loads(data)
+        try:
+            reference_id = (
+                response.css("div._171225da::text").get().replace("Ad id ", "")
+            )
+        except:
+            reference_id = ""
         sub_detail_list = response.css("div._676a547f ::text").extract()
 
         item["URL"] = response.meta.get("listing_url")
@@ -472,22 +547,29 @@ class OlxScraper(scrapy.Spider):
 
         item["Price"] = response.css("span._56dab877 ::text").get()
         item["Title"] = response.css("h1.a38b8112::text").get()
-        item["Type"] = response.css("div.b44ca0b3 ::text")[1].get()
-        item["Bedrooms"] = response.css("span.c47715cd::text").get()
+        item["Type"] = ""
         try:
-            item["Bathrooms"] = response.css("span.c47715cd::text")[1].get()
+            item["Bedrooms"] = json_data["ad"]["data"]["extraFields"]["rooms"]
+        except:
+            item["Bedrooms"] = ""
+        try:
+            item["Bathrooms"] = json_data["ad"]["data"]["extraFields"]["bathrooms"]
         except:
             item["Bathrooms"] = ""
         try:
-            item["Area"] = response.css("span.c47715cd::text")[2].get()
+            item["Area"] = json_data["ad"]["data"]["extraFields"]["ft"]
         except:
-            for sub in sub_detail_list:
-                if "Area (m²)" in sub_detail_list:
-                    item["Area"] = sub_detail_list[
-                        sub_detail_list.index("Area (m²)") + 1
-                    ]
-                else:
-                    item["Area"] = ""
+            item["Area"] = ""
+        # try:
+        #     item["Area"] = response.css("span.c47715cd::text")[2].get()
+        # except:
+        #     for sub in sub_detail_list:
+        #         if "Area (m²)" in sub_detail_list:
+        #             item["Area"] = sub_detail_list[
+        #                 sub_detail_list.index("Area (m²)") + 1
+        #             ]
+        #         else:
+        #             item["Area"] = ""
         item["Location"] = response.css("span._8918c0a8::text").get()
         try:
             if response.css("div.b44ca0b3 ::text")[18].get() == "Compound":
@@ -508,6 +590,7 @@ class OlxScraper(scrapy.Spider):
             f"https://www.olx.com.eg/api/listing/{reference_id}/contactInfo/"
         )
         item["Seller_phone_number"] = res.json()["mobile"]
+        # item["Seller_phone_number"] = json_data["sellerProfile"]["data"]["phoneNumber"]
         item["Description"] = (
             response.css("div._0f86855a ::text").get().replace("\n", "")
         )
@@ -522,6 +605,8 @@ class OlxScraper(scrapy.Spider):
         item["Down_payment"] = ""
 
         for sub_detail in sub_detail_list:
+            if "Type" in sub_detail_list:
+                item["Type"] = sub_detail_list[sub_detail_list.index("Type") + 1]
             if "Level" in sub_detail_list:
                 item["Level"] = sub_detail_list[sub_detail_list.index("Level") + 1]
             if "Payment Option" in sub_detail_list:
@@ -546,5 +631,7 @@ class OlxScraper(scrapy.Spider):
                 ]
 
         item["Image_url"] = response.css("picture._219b7e0a ::attr(srcset)")[1].get()
+        item["Lat"] = json_data["ad"]["data"]["geography"]["lat"]
+        item["Long"] = json_data["ad"]["data"]["geography"]["lng"]
 
         yield item

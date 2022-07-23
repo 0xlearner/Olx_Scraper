@@ -6,8 +6,13 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+from itemadapter import is_item
+import pandas as pd
+import logging
 
-from olx_egypt.models import Olx_Eg, session
+from olx_egypt.models import Olx_Eg, session, engine
+
+# logger = logging.getLogger(__name__)
 
 
 class OlxEgPipeline:
@@ -21,23 +26,35 @@ class OlxEgPipeline:
         # self.Session = sessionmaker(bind=engine)
 
     def process_item(self, item, spider):
-        """
-        Process the item and store to database.
-        """
-        # session = self.Session()
-        instance = session.query(Olx_Eg).filter_by(Reference=item["Reference"]).first()
-        if instance:
-            return instance
-        else:
-            olx_item = Olx_Eg(**item)
-            session.add(olx_item)
+        if is_item(item):
+            table_df = pd.DataFrame([ItemAdapter(item).asdict()])
+            table_df.to_sql(
+                name="olx_egypt",
+                con=engine,
+                method="multi",
+                chunksize=2000,
+                index=False,
+                if_exists="append",
+            )
 
-        try:
-            session.commit()
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+    # def process_item(self, item, spider):
+    #     """
+    #     Process the item and store to database.
+    #     """
+    #     # session = self.Session()
+    #     instance = session.query(Olx_Eg).filter_by(Reference=item["Reference"]).first()
+    #     if instance:
+    #         return instance
+    #     else:
+    #         olx_item = Olx_Eg(**item)
+    #         session.add(olx_item)
 
-        return item
+    #     try:
+    #         session.commit()
+    #     except:
+    #         session.rollback()
+    #         raise
+    #     finally:
+    #         session.close()
+
+    #     return item
